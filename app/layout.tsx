@@ -1,6 +1,6 @@
 export const metadata = {
   title: 'Image Compression API',
-  description: 'Simple image compression service for converting images to WebP format',
+  description: 'A simple API to compress images to WebP format',
 }
 
 export default function RootLayout({
