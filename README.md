@@ -6,7 +6,7 @@
 
 - 单一 API 端点：`/api/compress-image`
 - 支持所有常见图片格式（JPEG、PNG、GIF 等）
-- 自动调整大小至最大 1200x1200px（保持宽高比）
+- 支持两种输出尺寸：1200x1200px 或 500x500px（保持宽高比）
 - 转换为 WebP 格式，质量 85%
 - Docker 容器化，可直接部署到 Dokploy
 
@@ -22,6 +22,13 @@
 ### 端点
 
 **POST** `/api/compress-image`
+
+### 请求参数
+
+**Query 参数**:
+- `size` (可选): 输出尺寸，支持 `1200` 或 `500`，默认为 `1200`
+  - `size=1200`: 输出 1200x1200 图片
+  - `size=500`: 输出 500x500 图片
 
 ### 请求头
 
@@ -43,17 +50,35 @@
 #### cURL
 
 ```bash
+# 默认尺寸（1200x1200）
 curl -X POST \
   -H "Content-Type: image/jpeg" \
   --data-binary @image.jpg \
   http://localhost:3000/api/compress-image \
-  -o compressed.webp
+  -o compressed-1200.webp
+
+# 小尺寸（500x500）
+curl -X POST \
+  -H "Content-Type: image/jpeg" \
+  --data-binary @image.jpg \
+  "http://localhost:3000/api/compress-image?size=500" \
+  -o compressed-500.webp
 ```
 
 #### JavaScript
 
 ```javascript
+// 默认尺寸（1200x1200）
 const response = await fetch('/api/compress-image', {
+  method: 'POST',
+  headers: {
+    'Content-Type': file.type
+  },
+  body: await file.arrayBuffer()
+});
+
+// 小尺寸（500x500）
+const responseSmall = await fetch('/api/compress-image?size=500', {
   method: 'POST',
   headers: {
     'Content-Type': file.type
@@ -223,12 +248,13 @@ pub-compress-image/
 ## 图片处理流程
 
 1. **验证**: 检查内容类型和文件大小
-2. **缓冲**: 将请求转换为 Buffer
-3. **Sharp 处理**:
-   - 调整大小至最大 1200x1200（保持宽高比）
+2. **参数解析**: 解析 size 参数（默认 1200）
+3. **缓冲**: 将请求转换为 Buffer
+4. **Sharp 处理**:
+   - 调整大小至指定尺寸（1200x1200 或 500x500，保持宽高比）
    - 转换为 WebP 格式
    - 应用 85% 质量压缩
-4. **响应**: 返回压缩后的图片及适当的响应头
+5. **响应**: 返回压缩后的图片及适当的响应头
 
 ## 性能考虑
 

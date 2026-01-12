@@ -6,6 +6,23 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
+    // Get size parameter from query string (default: 1200)
+    const { searchParams } = new URL(req.url);
+    const sizeParam = searchParams.get('size') || '1200';
+
+    // Validate size parameter (only allow 1200 or 500)
+    let size: number;
+    if (sizeParam === '500') {
+      size = 500;
+    } else if (sizeParam === '1200') {
+      size = 1200;
+    } else {
+      return NextResponse.json(
+        { error: 'Invalid size parameter. Use size=500 or size=1200' },
+        { status: 400 }
+      );
+    }
+
     // Validate content-type
     const contentType = req.headers.get('content-type');
     if (!contentType?.startsWith('image/')) {
@@ -38,7 +55,7 @@ export async function POST(req: NextRequest) {
 
     // Process image with Sharp
     const compressedImage = await sharp(buffer)
-      .resize(1200, 1200, {
+      .resize(size, size, {
         fit: 'inside',
         withoutEnlargement: true
       })
@@ -51,7 +68,8 @@ export async function POST(req: NextRequest) {
       headers: {
         'Content-Type': 'image/webp',
         'Content-Length': compressedImage.length.toString(),
-        'Cache-Control': 'public, max-age=31536000, immutable'
+        'Cache-Control': 'public, max-age=31536000, immutable',
+        'X-Image-Size': `${size}x${size}`
       }
     });
 

@@ -1,0 +1,14 @@
+
+> pub-compress-image@1.0.0 dev
+> next dev
+
+ ⚠ Port 3000 is in use, trying 3001 instead.
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3001
+
+ ✓ Starting...
+ ✓ Ready in 1617ms
+ ✓ Compiled /api/compress-image in 256ms (57 modules)
+ POST /api/compress-image?size=1200 200 in 857ms
+ POST /api/compress-image?size=500 200 in 326ms
+ POST /api/compress-image 200 in 501ms
