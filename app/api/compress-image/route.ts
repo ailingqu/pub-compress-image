@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       .toBuffer();
 
     // Return compressed image
-    return new Response(compressedImage.buffer, {
+    return new Response(compressedImage as any, {
       status: 200,
       headers: {
         'Content-Type': 'image/webp',
