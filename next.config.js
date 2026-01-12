@@ -6,12 +6,6 @@ const nextConfig = {
     serverComponentsExternalPackages: ['sharp'],
   },
 
-  api: {
-    bodyParser: {
-      sizeLimit: '100mb',
-    },
-  },
-
   async headers() {
     return [
       {
