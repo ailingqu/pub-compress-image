@@ -239,55 +239,77 @@ compressImage('./image.jpg', '1200');
 
 ## 🚢 部署指南
 
-### 部署到 Dokploy（推荐）
+### 部署到 Dokploy（推荐）⭐
 
-#### 方式一：Git 自动部署
+Dokploy 是最简单的部署方式，只需 3 步即可完成！
 
-1. **Fork 或 Clone 本仓库**
+#### 快速部署步骤
+
+**1️⃣ 推送代码到 Git 仓库**
 
 ```bash
 git clone https://github.com/ailingqu/pub-compress-image.git
 cd pub-compress-image
-```
 
-2. **推送到您的 Git 仓库**
-
-```bash
+# 推送到您的仓库
 git remote set-url origin YOUR_GIT_REPO_URL
 git push -u origin master
 ```
 
-3. **在 Dokploy 控制台配置**
+**2️⃣ 在 Dokploy 创建应用**
 
-   - 登录 Dokploy
-   - 点击 **"Create Application"**
-   - 选择 **"Docker"** 部署类型
-   - 连接您的 Git 仓库
-   - Dokploy 会自动检测 `Dockerfile`
-   - 点击 **"Deploy"**
+- 登录 Dokploy 控制台
+- 点击 **"Create Application"**
+- 选择 **"Docker"** 部署类型
+- 连接您的 Git 仓库（GitHub/GitLab/Bitbucket）
+- Dokploy 会自动检测 `Dockerfile` 并开始构建
+- 等待部署完成（约 3-5 分钟）
 
-4. **配置域名（可选）**
+**3️⃣ 配置域名**
 
-   进入 **Domains** 标签页：
-   - 点击 **"Add Domain"**
-   - 输入您的域名（如 `api.yourdomain.com`）
-   - Container Port: `3000`
-   - Port: `80`
-   - 如果使用 Cloudflare：勾选 **"Behind Cloudflare"**
+进入应用的 **Domains** 标签页：
 
-5. **配置 Cloudflare DNS（如果使用）**
+![Dokploy 域名配置](./docs/domains.png)
 
-   在 Cloudflare 控制台：
-   - 类型: `A`
-   - 名称: `api` (或您的子域名)
-   - 内容: 您的 Dokploy 服务器 IP
-   - 代理状态: **已代理**（橙色云朵）
-   - SSL/TLS 模式: **Flexible**
+- 点击 **"Add Domain"**
+- **Host**: 输入您的域名（如 `processimage.yourdomain.com`）
+- **Path**: `/`
+- **Container Port**: `3000` ⚠️ **重要：必须是 3000**
+- **HTTPS**: 如使用 Cloudflare，保持关闭
+- 如使用 Cloudflare：勾选 **"Behind Cloudflare"**
+- 点击 **"Update"**
 
-6. **启用自动部署（推荐）**
+**4️⃣ 配置 DNS 解析**
 
-   - 在 Dokploy 中设置 Git Webhook
-   - 每次推送代码时自动重新部署
+在您的 DNS 服务商（如 Cloudflare）：
+
+| 设置项 | 值 |
+|--------|-----|
+| 类型 | `A` |
+| 名称 | `processimage`（或您的子域名前缀） |
+| 内容 | 您的 Dokploy 服务器 IP 地址 |
+| 代理状态 | 已代理（橙色云朵，推荐） |
+| TTL | Auto |
+
+**如果使用 Cloudflare**，还需设置：
+- 进入 **SSL/TLS** → **Overview**
+- 加密模式选择：**Flexible**
+
+✅ **完成！** 等待 1-2 分钟 DNS 生效，即可访问您的域名。
+
+#### 📌 重要提示
+
+- **Container Port 必须设置为 3000**（这是 Dockerfile 中定义的端口）
+- 如果服务器上已有其他服务占用 3000 端口也没关系，Dokploy 的 Traefik 会自动处理容器隔离
+- 启用 Git Webhook 后，每次推送代码都会自动重新部署
+
+#### 🔄 启用自动部署（可选）
+
+在 Dokploy 应用设置中：
+- 找到 **Git Webhook** 配置
+- 复制 Webhook URL
+- 在 GitHub/GitLab 仓库设置中添加 Webhook
+- 每次 `git push` 后自动重新部署
 
 #### 方式二：Docker 镜像部署
 
