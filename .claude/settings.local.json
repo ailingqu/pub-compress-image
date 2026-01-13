@@ -2,7 +2,31 @@
   "permissions": {
     "allow": [
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git mv:*)",
+      "Bash(npm install)",
+      "Bash(npm run build)",
+      "Bash(docker build:*)",
+      "Bash(docker run:*)",
+      "Bash(curl:*)",
+      "Bash(docker stop:*)",
+      "Bash(docker rm:*)",
+      "Bash(docker ps:*)",
+      "Bash(if [ -f output.webp ])",
+      "Bash(then file output.webp)",
+      "Bash(else echo \"文件不存在\")",
+      "Bash(fi)",
+      "Bash(chmod:*)",
+      "Bash(./test-api.sh:*)",
+      "Bash(ls:*)",
+      "Bash(pkill:*)",
+      "Bash(__NEW_LINE_3e0e81d8c7fd68a8__ echo \"\")",
+      "Bash(__NEW_LINE_bb2c95a5a352201d__ echo \"\")",
+      "Bash(__NEW_LINE_1fed4a93400dfb4d__ ls -lh test-output-default.webp)",
+      "Bash(__NEW_LINE_1a0f49d796085533__ file test-output-default.webp)",
+      "Bash(git reset:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }
