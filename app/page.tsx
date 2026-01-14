@@ -113,7 +113,7 @@ export default function Home() {
           }}>
             🖼️ 图片压缩工具
           </h1>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             <a
               href="/batch"
               style={{
@@ -141,6 +141,20 @@ export default function Home() {
               }}
             >
               🎬 视频压缩
+            </a>
+            <a
+              href="/extract-audio"
+              style={{
+                padding: '0.5rem 1rem',
+                background: 'linear-gradient(135deg, #f39c12 0%, #e74c3c 100%)',
+                color: 'white',
+                textDecoration: 'none',
+                borderRadius: '6px',
+                fontSize: '0.9rem',
+                fontWeight: '600'
+              }}
+            >
+              🎵 音频分离
             </a>
           </div>
         </div>
