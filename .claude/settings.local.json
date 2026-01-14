@@ -26,7 +26,8 @@
       "Bash(__NEW_LINE_1fed4a93400dfb4d__ ls -lh test-output-default.webp)",
       "Bash(__NEW_LINE_1a0f49d796085533__ file test-output-default.webp)",
       "Bash(git reset:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(npm install:*)"
     ]
   }
 }
