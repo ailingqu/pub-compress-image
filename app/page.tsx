@@ -102,16 +102,32 @@ export default function Home() {
         padding: '2rem',
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
       }}>
-        <h1 style={{
-          fontSize: '2.5rem',
-          marginBottom: '0.5rem',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text'
-        }}>
-          🖼️ 图片压缩工具
-        </h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+          <h1 style={{
+            fontSize: '2.5rem',
+            margin: 0,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>
+            🖼️ 图片压缩工具
+          </h1>
+          <a
+            href="/batch"
+            style={{
+              padding: '0.5rem 1rem',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
+              textDecoration: 'none',
+              borderRadius: '6px',
+              fontSize: '0.9rem',
+              fontWeight: '600'
+            }}
+          >
+            📦 批量压缩
+          </a>
+        </div>
         <p style={{ color: '#6c757d', marginBottom: '2rem' }}>
           将图片压缩为 WebP 格式，最高可节省 99% 体积
         </p>
