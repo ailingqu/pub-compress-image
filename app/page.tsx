@@ -113,20 +113,36 @@ export default function Home() {
           }}>
             🖼️ 图片压缩工具
           </h1>
-          <a
-            href="/batch"
-            style={{
-              padding: '0.5rem 1rem',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              color: 'white',
-              textDecoration: 'none',
-              borderRadius: '6px',
-              fontSize: '0.9rem',
-              fontWeight: '600'
-            }}
-          >
-            📦 批量压缩
-          </a>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <a
+              href="/batch"
+              style={{
+                padding: '0.5rem 1rem',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                textDecoration: 'none',
+                borderRadius: '6px',
+                fontSize: '0.9rem',
+                fontWeight: '600'
+              }}
+            >
+              📦 批量压缩
+            </a>
+            <a
+              href="/video"
+              style={{
+                padding: '0.5rem 1rem',
+                background: 'linear-gradient(135deg, #e74c3c 0%, #9b59b6 100%)',
+                color: 'white',
+                textDecoration: 'none',
+                borderRadius: '6px',
+                fontSize: '0.9rem',
+                fontWeight: '600'
+              }}
+            >
+              🎬 视频压缩
+            </a>
+          </div>
         </div>
         <p style={{ color: '#6c757d', marginBottom: '2rem' }}>
           将图片压缩为 WebP 格式，最高可节省 99% 体积

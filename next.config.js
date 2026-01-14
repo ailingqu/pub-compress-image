@@ -3,7 +3,7 @@ const nextConfig = {
   output: 'standalone',
 
   experimental: {
-    serverComponentsExternalPackages: ['sharp'],
+    serverComponentsExternalPackages: ['sharp', 'fluent-ffmpeg'],
   },
 
   async headers() {
