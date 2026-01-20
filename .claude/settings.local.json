@@ -27,7 +27,10 @@
       "Bash(__NEW_LINE_1a0f49d796085533__ file test-output-default.webp)",
       "Bash(git reset:*)",
       "Bash(git checkout:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(sudo rm -rf /Users/admin/Documents/project/dokploy/pub-compress-image/.next)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(sudo rm -rf .next)"
     ]
   }
 }

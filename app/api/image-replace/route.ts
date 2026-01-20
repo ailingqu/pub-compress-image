@@ -59,34 +59,52 @@ export async function POST(req: NextRequest) {
     }
 
     // 处理遮罩：转为灰度图并调整尺寸匹配原图
-    const processedMask = await sharp(maskBuffer)
-      .resize(originalMeta.width, originalMeta.height)
+    const width = originalMeta.width!;
+    const height = originalMeta.height!;
+
+    // 计算模糊半径：根据图片尺寸动态调整，范围 5-30
+    const blurRadius = Math.max(5, Math.min(30, Math.round(Math.min(width, height) / 50)));
+
+    // 对遮罩应用高斯模糊，创建渐进式边缘过渡
+    const grayscaleMask = await sharp(maskBuffer)
+      .resize(width, height)
       .grayscale()
+      .blur(blurRadius) // 高斯模糊实现羽化效果
+      .raw()
       .toBuffer();
 
-    // 将遮罩应用到替换图（提取要替换的区域）
-    // 先确保替换图有 alpha 通道
-    const replacementWithAlpha = await sharp(replacementBuffer)
+    // 读取原图和替换图的原始像素数据
+    const originalRaw = await sharp(originalBuffer)
+      .resize(width, height)
       .ensureAlpha()
+      .raw()
       .toBuffer();
 
-    // 使用遮罩作为 alpha 通道来提取替换区域
-    const maskedReplacement = await sharp(replacementWithAlpha)
-      .composite([{
-        input: processedMask,
-        blend: 'dest-in'
-      }])
-      .toBuffer();
-
-    // 将提取的区域合成到原图上
-    const result = await sharp(originalBuffer)
+    const replacementRaw = await sharp(replacementBuffer)
+      .resize(width, height)
       .ensureAlpha()
-      .composite([{
-        input: maskedReplacement,
-        blend: 'over'
-      }])
-      .png()
+      .raw()
       .toBuffer();
+
+    // 创建结果图像的 buffer
+    const resultBuffer = Buffer.alloc(width * height * 4);
+
+    // 逐像素混合：根据遮罩值选择原图或替换图的像素
+    for (let i = 0; i < width * height; i++) {
+      const maskValue = grayscaleMask[i] / 255; // 0-1 之间的值
+      const srcIdx = i * 4;
+
+      // 线性混合: result = original * (1 - mask) + replacement * mask
+      resultBuffer[srcIdx] = Math.round(originalRaw[srcIdx] * (1 - maskValue) + replacementRaw[srcIdx] * maskValue);         // R
+      resultBuffer[srcIdx + 1] = Math.round(originalRaw[srcIdx + 1] * (1 - maskValue) + replacementRaw[srcIdx + 1] * maskValue); // G
+      resultBuffer[srcIdx + 2] = Math.round(originalRaw[srcIdx + 2] * (1 - maskValue) + replacementRaw[srcIdx + 2] * maskValue); // B
+      resultBuffer[srcIdx + 3] = 255; // A - 完全不透明
+    }
+
+    // 将结果转为 PNG
+    const result = await sharp(resultBuffer, {
+      raw: { width, height, channels: 4 }
+    }).png().toBuffer();
 
     const response: ReplaceResponse = {
       success: true,

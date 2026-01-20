@@ -31,6 +31,11 @@ export default function ImageReplacePage() {
   const [result, setResult] = useState<ReplaceResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  // 滑动对比状态
+  const [sliderPosition, setSliderPosition] = useState(50)
+  const [isDragging, setIsDragging] = useState(false)
+  const compareContainerRef = useRef<HTMLDivElement>(null)
+
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 B'
     const k = 1024
@@ -273,12 +278,64 @@ export default function ImageReplacePage() {
       }
 
       setResult(data)
+      setSliderPosition(50) // 重置滑块位置
     } catch (err) {
       setError(err instanceof Error ? err.message : '处理失败')
     } finally {
       setLoading(false)
     }
   }
+
+  // 滑动对比：开始拖动
+  const handleSliderMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  // 滑动对比：触摸开始
+  const handleSliderTouchStart = () => {
+    setIsDragging(true)
+  }
+
+  // 滑动对比：移动
+  const handleSliderMove = useCallback((clientX: number) => {
+    if (!isDragging || !compareContainerRef.current) return
+    const rect = compareContainerRef.current.getBoundingClientRect()
+    const x = clientX - rect.left
+    const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100))
+    setSliderPosition(percentage)
+  }, [isDragging])
+
+  // 滑动对比：鼠标移动
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    handleSliderMove(e.clientX)
+  }, [handleSliderMove])
+
+  // 滑动对比：触摸移动
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    handleSliderMove(e.touches[0].clientX)
+  }, [handleSliderMove])
+
+  // 滑动对比：停止拖动
+  const handleSliderEnd = useCallback(() => {
+    setIsDragging(false)
+  }, [])
+
+  // 添加/移除全局事件监听
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove)
+      window.addEventListener('mouseup', handleSliderEnd)
+      window.addEventListener('touchmove', handleTouchMove)
+      window.addEventListener('touchend', handleSliderEnd)
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleSliderEnd)
+      window.removeEventListener('touchmove', handleTouchMove)
+      window.removeEventListener('touchend', handleSliderEnd)
+    }
+  }, [isDragging, handleMouseMove, handleSliderEnd, handleTouchMove])
 
   // 下载结果
   const handleDownload = () => {
@@ -566,8 +623,8 @@ export default function ImageReplacePage() {
           </div>
         )}
 
-        {/* 结果展示 */}
-        {result && result.success && result.data && (
+        {/* 结果展示 - 滑动对比 */}
+        {result && result.success && result.data && originalPreview && (
           <div style={{
             padding: '1.5rem',
             backgroundColor: '#d1f2eb',
@@ -581,15 +638,138 @@ export default function ImageReplacePage() {
               color: '#0f5132',
               marginBottom: '1rem'
             }}>
-              ✅ 合成完成！
+              ✅ 合成完成！拖动滑块对比效果
             </div>
-            <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+
+            {/* 滑动对比容器 */}
+            <div
+              ref={compareContainerRef}
+              style={{
+                position: 'relative',
+                width: '100%',
+                maxWidth: '800px',
+                margin: '0 auto 1rem',
+                borderRadius: '8px',
+                overflow: 'hidden',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                cursor: isDragging ? 'ew-resize' : 'default',
+                userSelect: 'none'
+              }}
+            >
+              {/* 合成后图片（底层） */}
               <img
                 src={`data:image/png;base64,${result.data}`}
                 alt="合成结果"
-                style={{ maxWidth: '100%', maxHeight: '400px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  height: 'auto'
+                }}
+                draggable={false}
               />
+
+              {/* 原图（上层，通过 clip 裁剪） */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  overflow: 'hidden',
+                  clipPath: `inset(0 ${100 - sliderPosition}% 0 0)`
+                }}
+              >
+                <img
+                  src={originalPreview}
+                  alt="原图"
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
+                  }}
+                  draggable={false}
+                />
+              </div>
+
+              {/* 滑块分割线 */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  bottom: 0,
+                  left: `${sliderPosition}%`,
+                  width: '3px',
+                  backgroundColor: 'white',
+                  transform: 'translateX(-50%)',
+                  boxShadow: '0 0 8px rgba(0,0,0,0.5)',
+                  zIndex: 10
+                }}
+              />
+
+              {/* 滑块手柄 */}
+              <div
+                onMouseDown={handleSliderMouseDown}
+                onTouchStart={handleSliderTouchStart}
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: `${sliderPosition}%`,
+                  transform: 'translate(-50%, -50%)',
+                  width: '44px',
+                  height: '44px',
+                  backgroundColor: 'white',
+                  borderRadius: '50%',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'ew-resize',
+                  zIndex: 20,
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  color: '#495057'
+                }}
+              >
+                ⟨⟩
+              </div>
+
+              {/* 标签 */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '10px',
+                  left: '10px',
+                  backgroundColor: 'rgba(0,0,0,0.6)',
+                  color: 'white',
+                  padding: '4px 10px',
+                  borderRadius: '4px',
+                  fontSize: '0.75rem',
+                  fontWeight: '600',
+                  zIndex: 5
+                }}
+              >
+                原图
+              </div>
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '10px',
+                  right: '10px',
+                  backgroundColor: 'rgba(0,0,0,0.6)',
+                  color: 'white',
+                  padding: '4px 10px',
+                  borderRadius: '4px',
+                  fontSize: '0.75rem',
+                  fontWeight: '600',
+                  zIndex: 5
+                }}
+              >
+                合成后
+              </div>
             </div>
+
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
