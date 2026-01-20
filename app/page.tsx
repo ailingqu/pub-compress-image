@@ -156,6 +156,20 @@ export default function Home() {
             >
               🎵 音频分离
             </a>
+            <a
+              href="/image-replace"
+              style={{
+                padding: '0.5rem 1rem',
+                background: 'linear-gradient(135deg, #9b59b6 0%, #3498db 100%)',
+                color: 'white',
+                textDecoration: 'none',
+                borderRadius: '6px',
+                fontSize: '0.9rem',
+                fontWeight: '600'
+              }}
+            >
+              🎨 区域替换
+            </a>
           </div>
         </div>
         <p style={{ color: '#6c757d', marginBottom: '2rem' }}>
