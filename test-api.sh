@@ -36,3 +36,16 @@ if [ -f test-output.webp ]; then
     echo "Content preview:"
     head -c 200 test-output.webp
 fi
+
+echo ""
+echo ""
+echo "=== Testing HEIC to WebP API ==="
+echo ""
+echo "6. Testing HEIC to WebP conversion:"
+echo ""
+echo "# Example usage (replace with actual HEIC file):"
+echo "# curl -X POST \\"
+echo "#   -H \"Content-Type: image/heic\" \\"
+echo "#   --data-binary @photo.heic \\"
+echo "#   https://processimage.mexxxxai.win/api/heic-to-webp \\"
+echo "#   -o converted.webp"

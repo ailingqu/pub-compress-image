@@ -30,7 +30,9 @@
       "Bash(npm install:*)",
       "Bash(sudo rm -rf /Users/admin/Documents/project/dokploy/pub-compress-image/.next)",
       "Bash(npx tsc --noEmit)",
-      "Bash(sudo rm -rf .next)"
+      "Bash(sudo rm -rf .next)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm remove:*)"
     ]
   }
 }

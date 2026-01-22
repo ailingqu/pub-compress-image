@@ -2,13 +2,11 @@
 
 import { useState } from 'react'
 
-export default function Home() {
+export default function HeicConvertPage() {
   const [file, setFile] = useState<File | null>(null)
-  const [size, setSize] = useState<'1200' | '500'>('1200')
   const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<{ blob: Blob; originalSize: number; compressedSize: number } | null>(null)
+  const [result, setResult] = useState<{ blob: Blob; originalSize: number; convertedSize: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [preview, setPreview] = useState<string | null>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
@@ -16,15 +14,10 @@ export default function Home() {
       setFile(selectedFile)
       setError(null)
       setResult(null)
-
-      // 生成预览
-      const reader = new FileReader()
-      reader.onload = (e) => setPreview(e.target?.result as string)
-      reader.readAsDataURL(selectedFile)
     }
   }
 
-  const handleCompress = async () => {
+  const handleConvert = async () => {
     if (!file) {
       setError('请先选择图片')
       return
@@ -36,27 +29,27 @@ export default function Home() {
 
     try {
       const arrayBuffer = await file.arrayBuffer()
-      const response = await fetch(`/api/compress-image?size=${size}`, {
+      const response = await fetch('/api/heic-to-webp', {
         method: 'POST',
         headers: {
-          'Content-Type': file.type
+          'Content-Type': file.type || 'image/heic'
         },
         body: arrayBuffer
       })
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || `压缩失败 (${response.status})`)
+        throw new Error(errorData.error || `转换失败 (${response.status})`)
       }
 
       const blob = await response.blob()
       setResult({
         blob,
         originalSize: file.size,
-        compressedSize: blob.size
+        convertedSize: blob.size
       })
     } catch (err) {
-      setError(err instanceof Error ? err.message : '压缩失败')
+      setError(err instanceof Error ? err.message : '转换失败')
     } finally {
       setLoading(false)
     }
@@ -65,10 +58,11 @@ export default function Home() {
   const handleDownload = () => {
     if (!result) return
 
+    const originalName = file?.name?.replace(/\.(heic|heif)$/i, '') || 'converted'
     const url = URL.createObjectURL(result.blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `compressed-${size}.webp`
+    a.download = `${originalName}.webp`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -82,10 +76,6 @@ export default function Home() {
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
   }
-
-  const compressionRatio = result
-    ? Math.round((1 - result.compressedSize / result.originalSize) * 100)
-    : 0
 
   return (
     <main style={{
@@ -106,88 +96,30 @@ export default function Home() {
           <h1 style={{
             fontSize: '2.5rem',
             margin: 0,
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: 'linear-gradient(135deg, #00b894 0%, #00cec9 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text'
           }}>
-            🖼️ 图片压缩工具
+            🔄 HEIC/HEIF 转 WebP
           </h1>
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <a
-              href="/batch"
-              style={{
-                padding: '0.5rem 1rem',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white',
-                textDecoration: 'none',
-                borderRadius: '6px',
-                fontSize: '0.9rem',
-                fontWeight: '600'
-              }}
-            >
-              📦 批量压缩
-            </a>
-            <a
-              href="/video"
-              style={{
-                padding: '0.5rem 1rem',
-                background: 'linear-gradient(135deg, #e74c3c 0%, #9b59b6 100%)',
-                color: 'white',
-                textDecoration: 'none',
-                borderRadius: '6px',
-                fontSize: '0.9rem',
-                fontWeight: '600'
-              }}
-            >
-              🎬 视频压缩
-            </a>
-            <a
-              href="/extract-audio"
-              style={{
-                padding: '0.5rem 1rem',
-                background: 'linear-gradient(135deg, #f39c12 0%, #e74c3c 100%)',
-                color: 'white',
-                textDecoration: 'none',
-                borderRadius: '6px',
-                fontSize: '0.9rem',
-                fontWeight: '600'
-              }}
-            >
-              🎵 音频分离
-            </a>
-            <a
-              href="/image-replace"
-              style={{
-                padding: '0.5rem 1rem',
-                background: 'linear-gradient(135deg, #9b59b6 0%, #3498db 100%)',
-                color: 'white',
-                textDecoration: 'none',
-                borderRadius: '6px',
-                fontSize: '0.9rem',
-                fontWeight: '600'
-              }}
-            >
-              🎨 区域替换
-            </a>
-            <a
-              href="/heic-convert"
-              style={{
-                padding: '0.5rem 1rem',
-                background: 'linear-gradient(135deg, #00b894 0%, #00cec9 100%)',
-                color: 'white',
-                textDecoration: 'none',
-                borderRadius: '6px',
-                fontSize: '0.9rem',
-                fontWeight: '600'
-              }}
-            >
-              🔄 HEIC转换
-            </a>
-          </div>
+          <a
+            href="/"
+            style={{
+              padding: '0.5rem 1rem',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
+              textDecoration: 'none',
+              borderRadius: '6px',
+              fontSize: '0.9rem',
+              fontWeight: '600'
+            }}
+          >
+            🏠 返回首页
+          </a>
         </div>
         <p style={{ color: '#6c757d', marginBottom: '2rem' }}>
-          将图片压缩为 WebP 格式，最高可节省 99% 体积
+          将 HEIC/HEIF 图片转换为 WebP 格式，保持原始分辨率，压缩体积
         </p>
 
         {/* 上传区域 */}
@@ -203,8 +135,8 @@ export default function Home() {
         }}
         onDragOver={(e) => {
           e.preventDefault()
-          e.currentTarget.style.borderColor = '#667eea'
-          e.currentTarget.style.backgroundColor = '#e7f3ff'
+          e.currentTarget.style.borderColor = '#00b894'
+          e.currentTarget.style.backgroundColor = '#e6fff9'
         }}
         onDragLeave={(e) => {
           e.currentTarget.style.borderColor = '#dee2e6'
@@ -215,109 +147,53 @@ export default function Home() {
           e.currentTarget.style.borderColor = '#dee2e6'
           e.currentTarget.style.backgroundColor = '#f8f9fa'
           const droppedFile = e.dataTransfer.files[0]
-          if (droppedFile && droppedFile.type.startsWith('image/')) {
+          if (droppedFile) {
             setFile(droppedFile)
-            const reader = new FileReader()
-            reader.onload = (e) => setPreview(e.target?.result as string)
-            reader.readAsDataURL(droppedFile)
+            setError(null)
+            setResult(null)
           }
         }}>
           <input
             type="file"
-            accept="image/*"
+            accept=".heic,.heif,image/heic,image/heif"
             onChange={handleFileChange}
             style={{ display: 'none' }}
             id="file-upload"
           />
           <label htmlFor="file-upload" style={{ cursor: 'pointer', display: 'block' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>📁</div>
+            <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>📱</div>
             <div style={{ color: '#495057', marginBottom: '0.5rem' }}>
-              {file ? file.name : '点击选择图片或拖拽到此处'}
+              {file ? file.name : '点击选择 HEIC/HEIF 图片或拖拽到此处'}
             </div>
             <div style={{ color: '#6c757d', fontSize: '0.875rem' }}>
-              支持 JPG、PNG、GIF、TIFF 等格式，最大 100MB
+              支持 HEIC、HEIF 格式（苹果设备照片格式），最大 100MB
             </div>
           </label>
         </div>
 
-        {/* 预览图 */}
-        {preview && (
-          <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
-            <img
-              src={preview}
-              alt="预览"
-              style={{
-                maxWidth: '100%',
-                maxHeight: '300px',
-                borderRadius: '8px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-              }}
-            />
-            <div style={{ marginTop: '0.5rem', color: '#6c757d', fontSize: '0.875rem' }}>
-              原始大小: {formatBytes(file?.size || 0)}
+        {/* 文件信息 */}
+        {file && !result && (
+          <div style={{
+            marginBottom: '1.5rem',
+            padding: '1rem',
+            backgroundColor: '#f8f9fa',
+            borderRadius: '8px',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📄</div>
+            <div style={{ color: '#495057', fontWeight: '600' }}>{file.name}</div>
+            <div style={{ color: '#6c757d', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+              大小: {formatBytes(file.size)}
+            </div>
+            <div style={{ color: '#adb5bd', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+              (HEIC 格式需要转换后才能预览)
             </div>
           </div>
         )}
 
-        {/* 尺寸选择 */}
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{
-            display: 'block',
-            marginBottom: '0.5rem',
-            fontWeight: '600',
-            color: '#495057'
-          }}>
-            选择输出尺寸:
-          </label>
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <label style={{
-              flex: 1,
-              padding: '1rem',
-              border: `2px solid ${size === '1200' ? '#667eea' : '#dee2e6'}`,
-              borderRadius: '8px',
-              cursor: 'pointer',
-              backgroundColor: size === '1200' ? '#e7f3ff' : 'white',
-              transition: 'all 0.3s ease'
-            }}>
-              <input
-                type="radio"
-                value="1200"
-                checked={size === '1200'}
-                onChange={(e) => setSize(e.target.value as '1200' | '500')}
-                style={{ marginRight: '0.5rem' }}
-              />
-              <strong>1200x1200</strong>
-              <div style={{ fontSize: '0.875rem', color: '#6c757d', marginTop: '0.25rem' }}>
-                适合网页展示、社交媒体
-              </div>
-            </label>
-            <label style={{
-              flex: 1,
-              padding: '1rem',
-              border: `2px solid ${size === '500' ? '#667eea' : '#dee2e6'}`,
-              borderRadius: '8px',
-              cursor: 'pointer',
-              backgroundColor: size === '500' ? '#e7f3ff' : 'white',
-              transition: 'all 0.3s ease'
-            }}>
-              <input
-                type="radio"
-                value="500"
-                checked={size === '500'}
-                onChange={(e) => setSize(e.target.value as '1200' | '500')}
-                style={{ marginRight: '0.5rem' }}
-              />
-              <strong>500x500</strong>
-              <div style={{ fontSize: '0.875rem', color: '#6c757d', marginTop: '0.25rem' }}>
-                适合缩略图、头像
-              </div>
-            </label>
-          </div>
-        </div>
-
-        {/* 压缩按钮 */}
+        {/* 转换按钮 */}
         <button
-          onClick={handleCompress}
+          onClick={handleConvert}
           disabled={!file || loading}
           style={{
             width: '100%',
@@ -327,26 +203,26 @@ export default function Home() {
             color: 'white',
             background: !file || loading
               ? '#adb5bd'
-              : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              : 'linear-gradient(135deg, #00b894 0%, #00cec9 100%)',
             border: 'none',
             borderRadius: '8px',
             cursor: !file || loading ? 'not-allowed' : 'pointer',
             transition: 'all 0.3s ease',
-            boxShadow: !file || loading ? 'none' : '0 4px 12px rgba(102, 126, 234, 0.4)',
+            boxShadow: !file || loading ? 'none' : '0 4px 12px rgba(0, 184, 148, 0.4)',
             marginBottom: '1rem'
           }}
           onMouseEnter={(e) => {
             if (!loading && file) {
               e.currentTarget.style.transform = 'translateY(-2px)'
-              e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.5)'
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 184, 148, 0.5)'
             }
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = 'translateY(0)'
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)'
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 184, 148, 0.4)'
           }}
         >
-          {loading ? '压缩中...' : '🚀 开始压缩'}
+          {loading ? '转换中...' : '🔄 开始转换'}
         </button>
 
         {/* 错误提示 */}
@@ -378,8 +254,23 @@ export default function Home() {
               color: '#0f5132',
               marginBottom: '1rem'
             }}>
-              ✅ 压缩完成！
+              ✅ 转换完成！
             </div>
+
+            {/* 转换后预览 */}
+            <div style={{ marginBottom: '1rem', textAlign: 'center' }}>
+              <img
+                src={URL.createObjectURL(result.blob)}
+                alt="转换结果"
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '300px',
+                  borderRadius: '8px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                }}
+              />
+            </div>
+
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
@@ -393,15 +284,9 @@ export default function Home() {
                 </div>
               </div>
               <div>
-                <div style={{ color: '#6c757d', fontSize: '0.875rem' }}>压缩后</div>
+                <div style={{ color: '#6c757d', fontSize: '0.875rem' }}>转换后</div>
                 <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#0f5132' }}>
-                  {formatBytes(result.compressedSize)}
-                </div>
-              </div>
-              <div>
-                <div style={{ color: '#6c757d', fontSize: '0.875rem' }}>压缩比</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#0f5132' }}>
-                  {compressionRatio}%
+                  {formatBytes(result.convertedSize)}
                 </div>
               </div>
             </div>
@@ -429,7 +314,7 @@ export default function Home() {
                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(17, 153, 142, 0.4)'
               }}
             >
-              💾 下载压缩图片
+              💾 下载 WebP 图片
             </button>
           </div>
         )}
@@ -456,7 +341,7 @@ export default function Home() {
               borderRadius: '4px',
               marginBottom: '1rem'
             }}>
-              POST /api/compress-image?size=1200
+              POST /api/heic-to-webp
             </code>
 
             <h3>cURL 示例</h3>
@@ -468,28 +353,28 @@ export default function Home() {
               overflow: 'auto',
               fontSize: '0.875rem'
             }}>
-{`# 大尺寸 (1200x1200)
+{`# HEIC 转 WebP
 curl -X POST \\
-  -H "Content-Type: image/jpeg" \\
-  --data-binary @image.jpg \\
-  "https://processimage.mexxxxai.win/api/compress-image?size=1200" \\
-  -o compressed-1200.webp
+  -H "Content-Type: image/heic" \\
+  --data-binary @photo.heic \\
+  "https://processimage.mexxxxai.win/api/heic-to-webp" \\
+  -o converted.webp
 
-# 小尺寸 (500x500)
+# HEIF 转 WebP
 curl -X POST \\
-  -H "Content-Type: image/jpeg" \\
-  --data-binary @image.jpg \\
-  "https://processimage.mexxxxai.win/api/compress-image?size=500" \\
-  -o compressed-500.webp`}
+  -H "Content-Type: image/heif" \\
+  --data-binary @photo.heif \\
+  "https://processimage.mexxxxai.win/api/heic-to-webp" \\
+  -o converted.webp`}
             </pre>
 
             <h3>技术规格</h3>
             <ul style={{ color: '#495057' }}>
+              <li>输入格式: HEIC, HEIF</li>
               <li>输出格式: WebP</li>
+              <li>分辨率: 保持原始分辨率</li>
               <li>压缩质量: 85%</li>
-              <li>支持尺寸: 1200x1200 或 500x500</li>
               <li>最大文件: 100MB</li>
-              <li>保持宽高比: 是</li>
             </ul>
           </div>
         </details>
@@ -508,7 +393,7 @@ curl -X POST \\
               href="https://nanobananas.ai/"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: '#667eea', textDecoration: 'none', fontWeight: '600' }}
+              style={{ color: '#00b894', textDecoration: 'none', fontWeight: '600' }}
             >
               NanoBananas AI
             </a> 提供技术支持
@@ -519,7 +404,7 @@ curl -X POST \\
               href="https://github.com/ailingqu/pub-compress-image"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: '#667eea', textDecoration: 'none', marginLeft: '0.5rem' }}
+              style={{ color: '#00b894', textDecoration: 'none', marginLeft: '0.5rem' }}
             >
               GitHub
             </a>
