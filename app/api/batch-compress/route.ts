@@ -24,10 +24,14 @@ interface BatchResponse {
 }
 
 export async function POST(req: NextRequest) {
+  const startTime = Date.now();
+  console.log('[batch-compress] Request received');
+
   try {
     // Get size parameter from query string (default: 1200, 'original' for no resize)
     const { searchParams } = new URL(req.url);
     const sizeParam = searchParams.get('size') || '1200';
+    console.log('[batch-compress] Size param:', sizeParam);
 
     // Validate size parameter (allow 1200, 500, or 'original')
     let size: number | null = null;
@@ -38,6 +42,7 @@ export async function POST(req: NextRequest) {
     } else if (sizeParam === '1200') {
       size = 1200;
     } else {
+      console.log('[batch-compress] Invalid size parameter:', sizeParam);
       return NextResponse.json(
         { error: 'Invalid size parameter. Use size=500, size=1200, or size=original' },
         { status: 400 }
@@ -47,8 +52,10 @@ export async function POST(req: NextRequest) {
     // Parse FormData
     const formData = await req.formData();
     const files = formData.getAll('files') as File[];
+    console.log('[batch-compress] Number of files:', files.length);
 
     if (!files || files.length === 0) {
+      console.log('[batch-compress] No files uploaded');
       return NextResponse.json(
         { error: 'No files uploaded. Please upload at least one image.' },
         { status: 400 }
@@ -58,6 +65,7 @@ export async function POST(req: NextRequest) {
     // Limit number of files
     const maxFiles = 20;
     if (files.length > maxFiles) {
+      console.log('[batch-compress] Too many files:', files.length);
       return NextResponse.json(
         { error: `Too many files. Maximum is ${maxFiles} files per request.` },
         { status: 400 }
@@ -66,13 +74,15 @@ export async function POST(req: NextRequest) {
 
     // Process all files in parallel
     const results: CompressResult[] = await Promise.all(
-      files.map(async (file): Promise<CompressResult> => {
+      files.map(async (file, index): Promise<CompressResult> => {
         const originalName = file.name;
         const originalSize = file.size;
+        console.log(`[batch-compress] Processing file ${index + 1}/${files.length}: ${originalName} (${originalSize} bytes)`);
 
         try {
           // Validate file type
           if (!file.type.startsWith('image/')) {
+            console.log(`[batch-compress] Invalid file type for ${originalName}: ${file.type}`);
             return {
               originalName,
               originalSize,
@@ -84,6 +94,7 @@ export async function POST(req: NextRequest) {
           // Validate file size (max 100MB per file)
           const maxSize = 100 * 1024 * 1024;
           if (file.size > maxSize) {
+            console.log(`[batch-compress] File too large: ${originalName}`);
             return {
               originalName,
               originalSize,
@@ -97,6 +108,7 @@ export async function POST(req: NextRequest) {
           const buffer = Buffer.from(arrayBuffer);
 
           if (buffer.length === 0) {
+            console.log(`[batch-compress] Empty file: ${originalName}`);
             return {
               originalName,
               originalSize,
@@ -122,6 +134,7 @@ export async function POST(req: NextRequest) {
 
           const compressedSize = compressedImage.length;
           const compressionRatio = Math.round((1 - compressedSize / originalSize) * 100);
+          console.log(`[batch-compress] Compressed ${originalName}: ${originalSize} -> ${compressedSize} (${compressionRatio}%)`);
 
           // Convert to base64
           const base64Data = compressedImage.toString('base64');
@@ -135,7 +148,7 @@ export async function POST(req: NextRequest) {
             success: true
           };
         } catch (error) {
-          console.error(`Error processing ${originalName}:`, error);
+          console.error(`[batch-compress] Error processing ${originalName}:`, error);
           return {
             originalName,
             originalSize,
@@ -156,6 +169,9 @@ export async function POST(req: NextRequest) {
       ? Math.round((1 - totalCompressedSize / totalOriginalSize) * 100)
       : 0;
 
+    const duration = Date.now() - startTime;
+    console.log(`[batch-compress] Complete. Success: ${successResults.length}, Failed: ${failResults.length}, Duration: ${duration}ms`);
+
     const response: BatchResponse = {
       results,
       totalOriginalSize,
@@ -168,7 +184,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(response);
 
   } catch (error) {
-    console.error('Batch compression error:', error);
+    const duration = Date.now() - startTime;
+    console.error(`[batch-compress] Error after ${duration}ms:`, error);
 
     return NextResponse.json(
       { error: 'Failed to process images. Please try again.' },

@@ -15,6 +15,9 @@ interface ReplaceResponse {
 }
 
 export async function POST(req: NextRequest) {
+  const startTime = Date.now();
+  console.log('[image-replace] Request received');
+
   try {
     const formData = await req.formData();
     const originalFile = formData.get('original') as File;
@@ -23,16 +26,20 @@ export async function POST(req: NextRequest) {
 
     // 验证文件
     if (!originalFile || !replacementFile || !maskFile) {
+      console.log('[image-replace] Missing files. Original:', !!originalFile, 'Replacement:', !!replacementFile, 'Mask:', !!maskFile);
       return NextResponse.json<ReplaceResponse>(
         { error: '请上传原图、替换图和遮罩图', success: false },
         { status: 400 }
       );
     }
 
+    console.log('[image-replace] Files received. Original:', originalFile.name, originalFile.size, 'Replacement:', replacementFile.name, replacementFile.size, 'Mask:', maskFile.name, maskFile.size);
+
     // 验证文件类型
     if (!originalFile.type.startsWith('image/') ||
         !replacementFile.type.startsWith('image/') ||
         !maskFile.type.startsWith('image/')) {
+      console.log('[image-replace] Invalid file types');
       return NextResponse.json<ReplaceResponse>(
         { error: '请上传有效的图片文件', success: false },
         { status: 400 }
@@ -49,9 +56,12 @@ export async function POST(req: NextRequest) {
     const replacementMeta = await sharp(replacementBuffer).metadata();
     const maskMeta = await sharp(maskBuffer).metadata();
 
+    console.log('[image-replace] Original size:', originalMeta.width, 'x', originalMeta.height, 'Replacement:', replacementMeta.width, 'x', replacementMeta.height);
+
     // 验证尺寸一致
     if (originalMeta.width !== replacementMeta.width ||
         originalMeta.height !== replacementMeta.height) {
+      console.log('[image-replace] Size mismatch');
       return NextResponse.json<ReplaceResponse>(
         { error: '原图和替换图的尺寸必须相同', success: false },
         { status: 400 }
@@ -64,6 +74,7 @@ export async function POST(req: NextRequest) {
 
     // 计算模糊半径：根据图片尺寸动态调整，范围 5-30
     const blurRadius = Math.max(5, Math.min(30, Math.round(Math.min(width, height) / 50)));
+    console.log('[image-replace] Processing with blur radius:', blurRadius);
 
     // 对遮罩应用高斯模糊，创建渐进式边缘过渡
     const grayscaleMask = await sharp(maskBuffer)
@@ -90,6 +101,7 @@ export async function POST(req: NextRequest) {
     const resultBuffer = Buffer.alloc(width * height * 4);
 
     // 逐像素混合：根据遮罩值选择原图或替换图的像素
+    console.log('[image-replace] Blending pixels...');
     for (let i = 0; i < width * height; i++) {
       const maskValue = grayscaleMask[i] / 255; // 0-1 之间的值
       const srcIdx = i * 4;
@@ -106,6 +118,9 @@ export async function POST(req: NextRequest) {
       raw: { width, height, channels: 4 }
     }).png().toBuffer();
 
+    const duration = Date.now() - startTime;
+    console.log(`[image-replace] Complete. Result size: ${result.length}, Duration: ${duration}ms`);
+
     const response: ReplaceResponse = {
       success: true,
       originalSize: originalFile.size,
@@ -118,7 +133,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(response);
 
   } catch (error) {
-    console.error('Image replace error:', error);
+    const duration = Date.now() - startTime;
+    console.error(`[image-replace] Error after ${duration}ms:`, error);
     return NextResponse.json<ReplaceResponse>(
       { error: '图片处理失败，请确保上传有效的图片文件', success: false },
       { status: 500 }

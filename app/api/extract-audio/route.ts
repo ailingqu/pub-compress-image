@@ -20,8 +20,10 @@ interface ExtractResponse {
 }
 
 export async function POST(req: NextRequest) {
+  const startTime = Date.now();
   const { searchParams } = new URL(req.url);
   const audioFormat = searchParams.get('format') || 'mp3'; // mp3 or aac
+  console.log('[extract-audio] Request received, format:', audioFormat);
 
   let inputPath = '';
   let audioPath = '';
@@ -32,14 +34,18 @@ export async function POST(req: NextRequest) {
     const file = formData.get('file') as File;
 
     if (!file) {
+      console.log('[extract-audio] No file uploaded');
       return NextResponse.json(
         { error: '请上传视频文件', success: false },
         { status: 400 }
       );
     }
 
+    console.log('[extract-audio] File received:', file.name, 'Size:', file.size, 'Type:', file.type);
+
     // 验证文件类型
     if (!file.type.startsWith('video/')) {
+      console.log('[extract-audio] Invalid file type:', file.type);
       return NextResponse.json(
         { error: '只支持视频文件', success: false },
         { status: 400 }
@@ -49,6 +55,7 @@ export async function POST(req: NextRequest) {
     // 文件大小限制 (500MB)
     const maxSize = 500 * 1024 * 1024;
     if (file.size > maxSize) {
+      console.log('[extract-audio] File too large:', file.size);
       return NextResponse.json(
         { error: '文件过大，最大支持 500MB', success: false },
         { status: 400 }
@@ -68,9 +75,11 @@ export async function POST(req: NextRequest) {
     videoPath = path.join(tempDir, `${uuid}_video_noaudio.mp4`);
 
     // 写入临时文件
+    console.log('[extract-audio] Writing temp file:', inputPath);
     fs.writeFileSync(inputPath, buffer);
 
     // 提取音频
+    console.log('[extract-audio] Extracting audio...');
     await new Promise<void>((resolve, reject) => {
       const cmd = ffmpeg(inputPath)
         .noVideo()
@@ -87,8 +96,10 @@ export async function POST(req: NextRequest) {
         .on('end', () => resolve())
         .on('error', (err) => reject(err));
     });
+    console.log('[extract-audio] Audio extracted');
 
     // 提取无声视频
+    console.log('[extract-audio] Extracting silent video...');
     await new Promise<void>((resolve, reject) => {
       ffmpeg(inputPath)
         .noAudio()
@@ -99,10 +110,14 @@ export async function POST(req: NextRequest) {
         .on('end', () => resolve())
         .on('error', (err) => reject(err));
     });
+    console.log('[extract-audio] Silent video extracted');
 
     // 读取输出文件
     const audioBuffer = fs.readFileSync(audioPath);
     const videoBuffer = fs.readFileSync(videoPath);
+
+    const duration = Date.now() - startTime;
+    console.log(`[extract-audio] Complete. Audio: ${audioBuffer.length}, Video: ${videoBuffer.length}, Duration: ${duration}ms`);
 
     // 清理临时文件
     if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
@@ -124,7 +139,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(response);
 
   } catch (error) {
-    console.error('Audio extraction error:', error);
+    const duration = Date.now() - startTime;
+    console.error(`[extract-audio] Error after ${duration}ms:`, error);
 
     // 清理临时文件
     try {

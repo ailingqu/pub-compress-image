@@ -6,16 +6,6 @@ import sharp from 'sharp';
 import { NextRequest, NextResponse } from 'next/server';
 import convert from 'heic-convert';
 
-// 增加 body size 限制到 100MB
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '100mb',
-    },
-    responseLimit: false,
-  },
-};
-
 export async function POST(req: NextRequest) {
   try {
     // Validate content-type
