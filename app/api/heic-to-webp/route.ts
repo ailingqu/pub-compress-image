@@ -1,9 +1,20 @@
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60; // 允许最长 60 秒处理时间
 
 import sharp from 'sharp';
 import { NextRequest, NextResponse } from 'next/server';
 import convert from 'heic-convert';
+
+// 增加 body size 限制到 100MB
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '100mb',
+    },
+    responseLimit: false,
+  },
+};
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,11 +31,11 @@ export async function POST(req: NextRequest) {
     const arrayBuffer = await req.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Validate buffer size (max 100MB)
-    const maxSize = 100 * 1024 * 1024;
+    // Validate buffer size (max 50MB for HEIC to avoid timeout)
+    const maxSize = 50 * 1024 * 1024;
     if (buffer.length > maxSize) {
       return NextResponse.json(
-        { error: 'Image too large. Maximum size is 100MB.' },
+        { error: 'Image too large. Maximum size is 50MB for HEIC conversion.' },
         { status: 413 }
       );
     }
@@ -51,13 +62,15 @@ export async function POST(req: NextRequest) {
     let imageBuffer: Buffer;
 
     if (isHeic) {
-      // Convert HEIC to PNG first using heic-convert
-      const pngBuffer = await convert({
+      console.log('Converting HEIC file, size:', buffer.length);
+      // Convert HEIC to JPEG first (faster than PNG)
+      const jpegBuffer = await convert({
         buffer: buffer,
-        format: 'PNG',
+        format: 'JPEG',
         quality: 1
       });
-      imageBuffer = Buffer.from(pngBuffer);
+      imageBuffer = Buffer.from(jpegBuffer);
+      console.log('HEIC converted to JPEG, size:', imageBuffer.length);
     } else {
       // For non-HEIC images, use directly
       imageBuffer = buffer;
@@ -68,6 +81,8 @@ export async function POST(req: NextRequest) {
     const convertedImage = await sharp(imageBuffer)
       .webp({ quality: 85 })
       .toBuffer();
+
+    console.log('WebP conversion complete, size:', convertedImage.length);
 
     // Return converted image
     return new Response(convertedImage as any, {
@@ -82,8 +97,11 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('HEIC to WebP conversion error:', error);
 
+    // 更详细的错误信息
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
     return NextResponse.json(
-      { error: 'Failed to convert image. Please ensure the file is a valid HEIC/HEIF image.' },
+      { error: `Failed to convert image: ${errorMessage}` },
       { status: 500 }
     );
   }

@@ -166,7 +166,7 @@ export default function HeicConvertPage() {
               {file ? file.name : '点击选择 HEIC/HEIF 图片或拖拽到此处'}
             </div>
             <div style={{ color: '#6c757d', fontSize: '0.875rem' }}>
-              支持 HEIC、HEIF 格式（苹果设备照片格式），最大 100MB
+              支持 HEIC、HEIF 格式（苹果设备照片格式），最大 50MB
             </div>
           </label>
         </div>
@@ -374,7 +374,7 @@ curl -X POST \\
               <li>输出格式: WebP</li>
               <li>分辨率: 保持原始分辨率</li>
               <li>压缩质量: 85%</li>
-              <li>最大文件: 100MB</li>
+              <li>最大文件: 50MB</li>
             </ul>
           </div>
         </details>
