@@ -32,7 +32,15 @@
       "Bash(npx tsc --noEmit)",
       "Bash(sudo rm -rf .next)",
       "Bash(pnpm add:*)",
-      "Bash(pnpm remove:*)"
+      "Bash(pnpm remove:*)",
+      "Bash(tree:*)",
+      "Bash(npx tsc:*)",
+      "Bash(pnpm next build:*)",
+      "Bash(sudo chown:*)",
+      "Bash(node:*)",
+      "Bash(pnpm dlx typescript:*)",
+      "Bash(pnpm --package=typescript dlx tsc:*)",
+      "Bash(lsof:*)"
     ]
   }
 }

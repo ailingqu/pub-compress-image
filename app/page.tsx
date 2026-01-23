@@ -184,6 +184,20 @@ export default function Home() {
             >
               🔄 HEIC转换
             </a>
+            <a
+              href="/stream-compress"
+              style={{
+                padding: '0.5rem 1rem',
+                background: 'linear-gradient(135deg, #fd79a8 0%, #e84393 100%)',
+                color: 'white',
+                textDecoration: 'none',
+                borderRadius: '6px',
+                fontSize: '0.9rem',
+                fontWeight: '600'
+              }}
+            >
+              ⚡ 流式压缩
+            </a>
           </div>
         </div>
         <p style={{ color: '#6c757d', marginBottom: '2rem' }}>
