@@ -132,7 +132,8 @@ ${results.map((r, i) => `${i + 1}. ${r.status} - ${r.url}`).join('\n')}
     });
 
     // 返回ZIP文件
-    return new NextResponse(zipBuffer, {
+    return new Response(zipBuffer as any, {
+      status: 200,
       headers: {
         'Content-Type': 'application/zip',
         'Content-Disposition': `attachment; filename="downloaded-files-${Date.now()}.zip"`,
