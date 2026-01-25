@@ -198,6 +198,20 @@ export default function Home() {
             >
               ⚡ 流式压缩
             </a>
+            <a
+              href="/json-downloader"
+              style={{
+                padding: '0.5rem 1rem',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                textDecoration: 'none',
+                borderRadius: '6px',
+                fontSize: '0.9rem',
+                fontWeight: '600'
+              }}
+            >
+              📦 JSON下载
+            </a>
           </div>
         </div>
         <p style={{ color: '#6c757d', marginBottom: '2rem' }}>

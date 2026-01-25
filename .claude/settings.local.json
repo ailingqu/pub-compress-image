@@ -40,7 +40,12 @@
       "Bash(node:*)",
       "Bash(pnpm dlx typescript:*)",
       "Bash(pnpm --package=typescript dlx tsc:*)",
-      "Bash(lsof:*)"
+      "Bash(lsof:*)",
+      "Bash(npm run dev:*)",
+      "Bash(if [ -f /tmp/test-download.zip ])",
+      "Bash(then)",
+      "Bash(unzip:*)",
+      "Bash(else)"
     ]
   }
 }

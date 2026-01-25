@@ -1,0 +1,30 @@
+{
+  "gallery": {
+    "photos": [
+      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4/photo.jpg",
+      "https://images.unsplash.com/photo-1469474968028-56623f02e42e/photo.jpg",
+      "https://images.pexels.com/photos/1287145/pexels-photo-1287145.jpeg"
+    ],
+    "videos": [
+      "https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4"
+    ]
+  },
+  "user": {
+    "avatar": "https://i.pravatar.cc/300.png",
+    "cover": "https://picsum.photos/1200/400.jpg"
+  },
+  "posts": [
+    {
+      "id": 1,
+      "images": [
+        "https://via.placeholder.com/800x600.jpg",
+        "https://via.placeholder.com/600x800.png"
+      ],
+      "thumbnail": "https://via.placeholder.com/150.webp"
+    },
+    {
+      "id": 2,
+      "media": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+    }
+  ]
+}
