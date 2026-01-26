@@ -94,21 +94,55 @@ export async function POST(req: NextRequest) {
     // 验证质量参数
     const quality = Math.max(1, Math.min(100, isNaN(qualityParam) ? 85 : qualityParam));
 
-    // 验证 Content-Type
+    // 获取图片数据
     const contentType = req.headers.get('content-type');
     console.log('[compress-image-stream] Content-Type:', contentType);
-    if (!contentType?.startsWith('image/')) {
+
+    let buffer: Buffer;
+    let imageContentType: string | null = contentType;
+
+    // 支持两种上传方式：直接二进制和 multipart/form-data
+    if (contentType?.startsWith('multipart/form-data')) {
+      // 处理表单上传
+      console.log('[compress-image-stream] Processing multipart/form-data');
+      const formData = await req.formData();
+      const file = formData.get('image') || formData.get('file');
+
+      if (!file || !(file instanceof File)) {
+        console.log('[compress-image-stream] No valid file in form data');
+        return NextResponse.json(
+          { error: 'No image file found in form data. Please upload a file with field name "image" or "file".' },
+          { status: 400 }
+        );
+      }
+
+      // 验证文件类型
+      if (!file.type.startsWith('image/')) {
+        console.log('[compress-image-stream] Invalid file type:', file.type);
+        return NextResponse.json(
+          { error: 'Invalid file type. Please upload an image.' },
+          { status: 400 }
+        );
+      }
+
+      const arrayBuffer = await file.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
+      imageContentType = file.type;
+      console.log('[compress-image-stream] File from form data:', file.name, file.type, buffer.length);
+    } else if (contentType?.startsWith('image/')) {
+      // 直接二进制上传
+      console.log('[compress-image-stream] Processing binary image data');
+      const arrayBuffer = await req.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
+      console.log('[compress-image-stream] Received buffer size:', buffer.length);
+    } else {
+      // 不支持的 Content-Type
       console.log('[compress-image-stream] Invalid content type');
       return NextResponse.json(
-        { error: 'Invalid content type. Please upload an image.' },
+        { error: 'Invalid content type. Please upload an image with Content-Type: image/* or multipart/form-data.' },
         { status: 400 }
       );
     }
-
-    // 获取图片 buffer
-    const arrayBuffer = await req.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    console.log('[compress-image-stream] Received buffer size:', buffer.length);
 
     // 验证 buffer 大小 (最大 100MB)
     const maxSize = 100 * 1024 * 1024;
@@ -132,7 +166,7 @@ export async function POST(req: NextRequest) {
     // 确定最终输出格式
     let outputFormat: 'png' | 'webp' | 'jpeg';
     if (formatParam === 'original') {
-      outputFormat = getOriginalFormat(contentType);
+      outputFormat = getOriginalFormat(imageContentType);
     } else if (formatParam === 'jpg') {
       outputFormat = 'jpeg';
     } else {
