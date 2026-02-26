@@ -114,7 +114,12 @@ async function processTask(taskId: string): Promise<void> {
 
   try {
     console.log(`[JimengQueue] 任务 ${taskId} 发送请求到 Zeakai...`);
-    console.log(`[JimengQueue] 请求体:`, JSON.stringify(requestBody, null, 2));
+    console.log(`[JimengQueue] 请求体:`, JSON.stringify(requestBody, (key, value) => {
+      if (key === 'url' && typeof value === 'string' && value.startsWith('data:')) {
+        return value.slice(0, 50) + '...[base64 truncated]';
+      }
+      return value;
+    }, 2));
     const fetchStart = Date.now();
     const resp = await fetch(baseurl, {
       method: 'POST',
