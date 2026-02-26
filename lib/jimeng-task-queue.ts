@@ -70,6 +70,11 @@ async function processTask(taskId: string): Promise<void> {
   const baseurl = process.env.ZEAKAI_API_URL + '/v1/chat/completions';
   const authToken = process.env.ZEAKAI_TOKEN || '';
 
+  console.log(`[JimengQueue] 任务 ${taskId} 开始处理`);
+  console.log(`[JimengQueue] API URL: ${baseurl}`);
+  console.log(`[JimengQueue] Model: ${params.model}, Prompt: ${params.prompt.slice(0, 100)}`);
+  console.log(`[JimengQueue] ImageUrl: ${params.imageUrl || '无'}, AspectRatio: ${params.aspectRatio || '无'}`);
+
   // 构建消息内容，将 aspectRatio 拼接到 prompt 中
   const fullPrompt = params.aspectRatio
     ? `${params.prompt} --ar ${params.aspectRatio}`
@@ -92,9 +97,11 @@ async function processTask(taskId: string): Promise<void> {
       } else {
         messageContent.push({ type: 'image_url', image_url: { url: params.imageUrl } });
       }
-    } catch (err) {
+    } catch (err: any) {
       const msg = err instanceof Error ? err.message : String(err);
-      await redis.hset(key, { status: 'failed', error: `Image error: ${msg}`, updatedAt: new Date().toISOString() });
+      const cause = err?.cause ? ` | cause: ${err.cause?.message || JSON.stringify(err.cause)}` : '';
+      console.error(`[JimengQueue] 任务 ${taskId} 图片处理失败: ${msg}${cause}`);
+      await redis.hset(key, { status: 'failed', error: `Image error: ${msg}${cause}`.slice(0, 500), updatedAt: new Date().toISOString() });
       return;
     }
   }
@@ -106,19 +113,26 @@ async function processTask(taskId: string): Promise<void> {
   };
 
   try {
+    console.log(`[JimengQueue] 任务 ${taskId} 发送请求到 Zeakai...`);
+    console.log(`[JimengQueue] 请求体:`, JSON.stringify(requestBody, null, 2));
+    const fetchStart = Date.now();
     const resp = await fetch(baseurl, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody),
+      signal: AbortSignal.timeout(600_000),
     });
+    console.log(`[JimengQueue] 任务 ${taskId} 收到响应, status=${resp.status}, 耗时=${Date.now() - fetchStart}ms`);
 
     if (!resp.ok) {
       const errText = await resp.text();
+      console.error(`[JimengQueue] 任务 ${taskId} API 返回错误: ${resp.status}`, errText.slice(0, 500));
       await redis.hset(key, { status: 'failed', error: `API ${resp.status}: ${errText.slice(0, 500)}`, updatedAt: new Date().toISOString() });
       return;
     }
 
     const result = await resp.json();
+    console.log(`[JimengQueue] 任务 ${taskId} 响应内容:`, JSON.stringify(result, null, 2));
     let videoUrl: string | null = null;
 
     if (result.choices?.[0]?.message?.content) {
@@ -142,9 +156,14 @@ async function processTask(taskId: string): Promise<void> {
 
     await redis.hset(key, { status: 'success', videoUrl, updatedAt: new Date().toISOString() });
     console.log(`[JimengQueue] 任务 ${taskId} 完成, videoUrl: ${videoUrl}`);
-  } catch (err) {
+  } catch (err: any) {
     const msg = err instanceof Error ? err.message : String(err);
-    await redis.hset(key, { status: 'failed', error: msg, updatedAt: new Date().toISOString() });
+    const cause = err?.cause ? ` | cause: ${err.cause?.message || JSON.stringify(err.cause)}` : '';
+    const code = err?.code ? ` | code: ${err.code}` : '';
+    const fullError = `${msg}${cause}${code}`;
+    console.error(`[JimengQueue] 任务 ${taskId} fetch 异常:`, fullError);
+    console.error(`[JimengQueue] 完整错误对象:`, err);
+    await redis.hset(key, { status: 'failed', error: fullError.slice(0, 500), updatedAt: new Date().toISOString() });
   }
 }
 
