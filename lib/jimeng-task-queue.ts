@@ -196,7 +196,8 @@ async function processTask(taskId: string): Promise<void> {
     }
 
     if (!videoUrl) {
-      await redis.hset(key, { status: 'failed', error: 'No video URL in response', updatedAt: new Date().toISOString() });
+      const preview = fullContent.slice(0, 500) || '(empty response)';
+      await redis.hset(key, { status: 'failed', error: `No video URL found. Response: ${preview}`.slice(0, 500), updatedAt: new Date().toISOString() });
       return;
     }
 
