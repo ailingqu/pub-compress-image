@@ -109,25 +109,29 @@ async function processTask(taskId: string): Promise<void> {
   const requestBody = {
     model: params.model,
     messages: [{ role: 'user', content: messageContent }],
-    stream: false,
+    stream: true,
   };
 
+  console.log(`[JimengQueue] 任务 ${taskId} 发送请求到 Zeakai (stream mode)...`);
+  console.log(`[JimengQueue] 请求体:`, JSON.stringify(requestBody, (key, value) => {
+    if (key === 'url' && typeof value === 'string' && value.startsWith('data:')) {
+      return value.slice(0, 50) + '...[base64 truncated]';
+    }
+    return value;
+  }, 2));
+
   try {
-    console.log(`[JimengQueue] 任务 ${taskId} 发送请求到 Zeakai...`);
-    console.log(`[JimengQueue] 请求体:`, JSON.stringify(requestBody, (key, value) => {
-      if (key === 'url' && typeof value === 'string' && value.startsWith('data:')) {
-        return value.slice(0, 50) + '...[base64 truncated]';
-      }
-      return value;
-    }, 2));
     const fetchStart = Date.now();
     const resp = await fetch(baseurl, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(requestBody),
       signal: AbortSignal.timeout(600_000),
     });
-    console.log(`[JimengQueue] 任务 ${taskId} 收到响应, status=${resp.status}, 耗时=${Date.now() - fetchStart}ms`);
+    console.log(`[JimengQueue] 任务 ${taskId} 收到流式响应头, status=${resp.status}, 耗时=${Date.now() - fetchStart}ms`);
 
     if (!resp.ok) {
       const errText = await resp.text();
@@ -136,22 +140,59 @@ async function processTask(taskId: string): Promise<void> {
       return;
     }
 
-    const result = await resp.json();
-    console.log(`[JimengQueue] 任务 ${taskId} 响应内容:`, JSON.stringify(result, null, 2));
-    let videoUrl: string | null = null;
+    // 读取 SSE 流，拼接 content
+    const reader = resp.body?.getReader();
+    if (!reader) {
+      await redis.hset(key, { status: 'failed', error: 'No response body', updatedAt: new Date().toISOString() });
+      return;
+    }
 
-    if (result.choices?.[0]?.message?.content) {
-      const content = result.choices[0].message.content;
-      const m1 = content.match(/\[Download Video\]\((https?:\/\/[^\s)]+)\)/);
-      if (m1) videoUrl = m1[1];
-      if (!videoUrl) {
-        const m2 = content.match(/<video[^>]*>\s*(https?:\/\/[^\s<]+)/);
-        if (m2) videoUrl = m2[1].trim();
+    const decoder = new TextDecoder();
+    let fullContent = '';
+    let buffer = '';
+    let chunkCount = 0;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || !trimmed.startsWith('data: ')) continue;
+        const data = trimmed.slice(6);
+        if (data === '[DONE]') continue;
+
+        try {
+          const chunk = JSON.parse(data);
+          const delta = chunk.choices?.[0]?.delta?.content;
+          if (delta) {
+            fullContent += delta;
+            chunkCount++;
+          }
+        } catch {
+          // 忽略非 JSON 行
+        }
       }
-      if (!videoUrl) {
-        const m3 = content.match(/(https?:\/\/[^\s)<]+\.mp4[^\s)<]*)/);
-        if (m3) videoUrl = m3[1];
-      }
+    }
+
+    console.log(`[JimengQueue] 任务 ${taskId} 流式读取完成, chunks=${chunkCount}, 总耗时=${Date.now() - fetchStart}ms`);
+    console.log(`[JimengQueue] 任务 ${taskId} 完整内容:`, fullContent.slice(0, 2000));
+
+    // 提取 videoUrl
+    let videoUrl: string | null = null;
+    const m1 = fullContent.match(/\[Download Video\]\((https?:\/\/[^\s)]+)\)/);
+    if (m1) videoUrl = m1[1];
+    if (!videoUrl) {
+      const m2 = fullContent.match(/<video[^>]*>\s*(https?:\/\/[^\s<]+)/);
+      if (m2) videoUrl = m2[1].trim();
+    }
+    if (!videoUrl) {
+      const m3 = fullContent.match(/(https?:\/\/[^\s)<]+\.mp4[^\s)<]*)/);
+      if (m3) videoUrl = m3[1];
     }
 
     if (!videoUrl) {
@@ -166,7 +207,7 @@ async function processTask(taskId: string): Promise<void> {
     const cause = err?.cause ? ` | cause: ${err.cause?.message || JSON.stringify(err.cause)}` : '';
     const code = err?.code ? ` | code: ${err.code}` : '';
     const fullError = `${msg}${cause}${code}`;
-    console.error(`[JimengQueue] 任务 ${taskId} fetch 异常:`, fullError);
+    console.error(`[JimengQueue] 任务 ${taskId} 异常:`, fullError);
     console.error(`[JimengQueue] 完整错误对象:`, err);
     await redis.hset(key, { status: 'failed', error: fullError.slice(0, 500), updatedAt: new Date().toISOString() });
   }
