@@ -58,14 +58,20 @@ export async function POST(req: NextRequest) {
 
     console.log('[image-replace] Original size:', originalMeta.width, 'x', originalMeta.height, 'Replacement:', replacementMeta.width, 'x', replacementMeta.height);
 
-    // 验证尺寸一致
+    // 验证尺寸一致，若不一致则检查宽高比是否相同
     if (originalMeta.width !== replacementMeta.width ||
         originalMeta.height !== replacementMeta.height) {
-      console.log('[image-replace] Size mismatch');
-      return NextResponse.json<ReplaceResponse>(
-        { error: '原图和替换图的尺寸必须相同', success: false },
-        { status: 400 }
-      );
+      const originalRatio = originalMeta.width! / originalMeta.height!;
+      const replacementRatio = replacementMeta.width! / replacementMeta.height!;
+      const ratioDiff = Math.abs(originalRatio - replacementRatio) / originalRatio;
+      if (ratioDiff > 0.01) {
+        console.log('[image-replace] Size and aspect ratio mismatch');
+        return NextResponse.json<ReplaceResponse>(
+          { error: '原图和替换图的宽高比不一致，无法自动缩放', success: false },
+          { status: 400 }
+        );
+      }
+      console.log('[image-replace] Size mismatch but same aspect ratio, will resize replacement to match original');
     }
 
     // 处理遮罩：转为灰度图并调整尺寸匹配原图
