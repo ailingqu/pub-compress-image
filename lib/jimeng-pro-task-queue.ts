@@ -73,14 +73,17 @@ async function resolveImageUrl(rawUrl: string): Promise<string> {
 /**
  * 后台处理：按首尾帧格式调用 Zeakai，更新 Redis 状态
  *
- * 请求体格式（对应官方 seedance 1.5 pro）：
+ * 请求体格式（Zeakai OpenAI Chat 兼容格式）：
  * {
  *   model: "jimeng-video-3.5-pro",
- *   content: [
- *     { type: "text", text: "..." },
- *     { type: "image_url", image_url: { url: "..." }, role: "first_frame" },
- *     { type: "image_url", image_url: { url: "..." }, role: "last_frame" }
- *   ],
+ *   messages: [{
+ *     role: "user",
+ *     content: [
+ *       { type: "text", text: "..." },
+ *       { type: "image_url", image_url: { url: "..." }, role: "first_frame" },
+ *       { type: "image_url", image_url: { url: "..." }, role: "last_frame" }
+ *     ]
+ *   }],
  *   stream: true
  * }
  */
@@ -144,7 +147,7 @@ async function processProTask(taskId: string): Promise<void> {
 
   const requestBody = {
     model: params.model,
-    content,
+    messages: [{ role: 'user', content }],
     stream: true,
   };
 
