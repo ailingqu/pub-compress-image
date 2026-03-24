@@ -129,7 +129,7 @@ async function processTask(taskId: string): Promise<void> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestBody),
-      signal: AbortSignal.timeout(600_000),
+      signal: AbortSignal.timeout(270_000),
     });
     console.log(`[JimengQueue] 任务 ${taskId} 收到流式响应头, status=${resp.status}, 耗时=${Date.now() - fetchStart}ms`);
 
