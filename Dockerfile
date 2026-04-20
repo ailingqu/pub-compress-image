@@ -29,8 +29,14 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Install FFmpeg for video compression
-RUN apk add --no-cache ffmpeg
+# Install FFmpeg for video compression, fonts for Sharp SVG text rendering (watermark API)
+RUN apk add --no-cache \
+      ffmpeg \
+      fontconfig \
+      ttf-dejavu \
+      font-noto \
+      font-noto-cjk \
+    && fc-cache -f
 
 # Create user and group
 RUN addgroup --system --gid 1001 nodejs && \

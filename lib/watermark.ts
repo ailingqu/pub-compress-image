@@ -190,7 +190,7 @@ async function buildTextOverlay(
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   <text x="${width / 2}" y="${height / 2}"
-    font-family="Arial, Helvetica, sans-serif"
+    font-family="Arial, Helvetica, 'DejaVu Sans', 'Noto Sans CJK SC', 'Noto Sans', sans-serif"
     font-size="${fontSize}"
     fill="${opts.color}"
     fill-opacity="${opts.opacity}"
