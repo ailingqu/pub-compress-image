@@ -532,12 +532,12 @@ curl -X POST \\
         }}>
           <div style={{ marginBottom: '0.5rem' }}>
             由 <a
-              href="https://nanobananas.ai/"
+              href="https://vinano.ai/"
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: '#667eea', textDecoration: 'none', fontWeight: '600' }}
             >
-              NanoBananas AI
+              ViNano AI
             </a> 提供技术支持
           </div>
           <div>

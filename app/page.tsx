@@ -171,6 +171,34 @@ export default function Home() {
               🎨 区域替换
             </a>
             <a
+              href="/watermark"
+              style={{
+                padding: '0.5rem 1rem',
+                background: 'linear-gradient(135deg, #f09433 0%, #dc2743 50%, #bc1888 100%)',
+                color: 'white',
+                textDecoration: 'none',
+                borderRadius: '6px',
+                fontSize: '0.9rem',
+                fontWeight: '600'
+              }}
+            >
+              💧 水印
+            </a>
+            <a
+              href="/batch-watermark"
+              style={{
+                padding: '0.5rem 1rem',
+                background: 'linear-gradient(135deg, #bc1888 0%, #f09433 100%)',
+                color: 'white',
+                textDecoration: 'none',
+                borderRadius: '6px',
+                fontSize: '0.9rem',
+                fontWeight: '600'
+              }}
+            >
+              🖼️ 批量水印
+            </a>
+            <a
               href="/heic-convert"
               style={{
                 padding: '0.5rem 1rem',
@@ -533,12 +561,12 @@ curl -X POST \\
         }}>
           <div style={{ marginBottom: '0.5rem' }}>
             由 <a
-              href="https://nanobananas.ai/"
+              href="https://vinano.ai/"
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: '#667eea', textDecoration: 'none', fontWeight: '600' }}
             >
-              NanoBananas AI
+              ViNano AI
             </a> 提供技术支持
           </div>
           <div>

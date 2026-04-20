@@ -791,9 +791,9 @@ git push origin feature/new-feature
 
 ## 👨‍💻 作者
 
-由 [NanoBananas AI](https://nanobananas.ai/) 团队开发和维护
+由 [ViNano AI](https://vinano.ai/) 团队开发和维护
 
-- 网站: [https://nanobananas.ai/](https://nanobananas.ai/)
+- 网站: [https://vinano.ai/](https://vinano.ai/)
 - GitHub: [@ailingqu](https://github.com/ailingqu)
 
 ## 🙏 致谢
@@ -807,7 +807,7 @@ git push origin feature/new-feature
 
 - 🐛 报告问题: [GitHub Issues](https://github.com/ailingqu/pub-compress-image/issues)
 - 💬 讨论: [GitHub Discussions](https://github.com/ailingqu/pub-compress-image/discussions)
-- 📧 邮件: support@nanobananas.ai
+- 📧 邮件: support@vinano.ai
 
 ## 🗺️ 路线图
 
@@ -828,6 +828,6 @@ git push origin feature/new-feature
 
 **如果这个项目对您有帮助，请给它一个 ⭐️**
 
-Made with ❤️ by [NanoBananas AI](https://nanobananas.ai/)
+Made with ❤️ by [ViNano AI](https://vinano.ai/)
 
 </div>
